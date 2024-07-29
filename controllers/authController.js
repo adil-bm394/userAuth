@@ -6,10 +6,20 @@ const sendOtpEmail = require("../services/emailService");
 const OtpModel = require("../models/OtpModel");
 const statusCodes = require("../Utils/statusCodes");
 const messages = require("../Utils/messages");
+const jwt = require("jsonwebtoken");
+const { config } = require("dotenv");
+const serverConfig = require("../config/server-config");
 
 //Send-OTP controller
 const sendOtpController = async (req, res) => {
   const { email } = req.body;
+
+  const existingUser = await userModel.findOne({ where: { email } });
+  if (existingUser) {
+    return res
+      .status(statusCodes.OK)
+      .json({ success: false, message: messages.USER_EXISTS });
+  }
 
   const otp = crypto.randomInt(100000, 999999).toString();
 
@@ -25,9 +35,9 @@ const sendOtpController = async (req, res) => {
   }
 };
 
-//RegisterController
-const registerController = async (req, res) => {
-  const { username, password, email, otp } = req.body;
+// Verify OTP Controller
+const verifyOtpController = async (req, res) => {
+  const { email, otp } = req.body;
 
   try {
     const otpRecord = await OtpModel.findOne({
@@ -49,13 +59,25 @@ const registerController = async (req, res) => {
         .json({ message: messages.OTP_EXPIRED });
     }
 
-    const existingUser = await userModel.findOne({ where: { email } });
-    if (existingUser) {
-      return res
-        .status(statusCodes.OK)
-        .json({ success: false, message: messages.USER_EXISTS });
-    }
+    const otpToken = jwt.sign({ email }, serverConfig.JWT_SECRET, {
+      expiresIn: "10m",
+    });
 
+    res.status(statusCodes.OK).json({ message: messages.OTP_VERIFIED, otpToken });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(statusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
+  }
+};
+
+//RegisterController
+const registerController = async (req, res) => {
+  const { username, password } = req.body;
+  const email = req.email; // Get the email from the middleware
+
+  try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -102,8 +124,10 @@ const loginController = async (req, res) => {
         .status(statusCodes.UNAUTHORIZED)
         .json({ message: messages.INVALID_CREDENTIALS });
     }
-
-    res.status(statusCodes.OK).json({ message: messages.LOGIN_SUCCESS, user });
+       const token = jwt.sign({ id: user._id }, serverConfig.JWT_SECRET, {
+         expiresIn: "1d",
+       });
+    res.status(statusCodes.OK).json({ message: messages.LOGIN_SUCCESS, user ,token});
   } catch (error) {
     console.log(error);
     res
@@ -114,6 +138,7 @@ const loginController = async (req, res) => {
 
 module.exports = {
   sendOtpController,
+  verifyOtpController,
   registerController,
   loginController,
 };

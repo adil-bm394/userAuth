@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const colors = require("colors");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 const User = require("./models/UserModel");
 const db = require("./models/index");
@@ -10,6 +11,7 @@ const serverConfig = require("./config/server-config");
 
 dotenv.config();
 const app = express();
+app.use(cors());
 
 // Middleware
 app.use(bodyParser.json());

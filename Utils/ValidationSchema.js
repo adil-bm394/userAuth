@@ -15,6 +15,26 @@ const validateOtpRequest = [
     next();
   },
 ];
+const validateOtpVerification = [
+  body("email")
+    .isEmail()
+    .withMessage("Invalid email address")
+    .notEmpty()
+    .withMessage("Email is required")
+    .normalizeEmail(),
+  body("otp")
+    .notEmpty()
+    .withMessage("OTP is required")
+    .isNumeric()
+    .withMessage("OTP must be a number"),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
 
 const validateRegisterRequest = [
   body("username")
@@ -28,19 +48,6 @@ const validateRegisterRequest = [
     .withMessage("Password is required")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
-
-  body("email")
-    .isEmail()
-    .withMessage("Invalid email address")
-    .notEmpty()
-    .withMessage("Email is required")
-    .normalizeEmail(),
-
-  body("otp")
-    .notEmpty()
-    .withMessage("OTP is required")
-    .isNumeric()
-    .withMessage("OTP must be a number"),
 
   (req, res, next) => {
     const errors = validationResult(req);
@@ -74,6 +81,7 @@ const validateLoginRequest = [
 
 module.exports = {
   validateOtpRequest,
+   validateOtpVerification,
   validateRegisterRequest,
   validateLoginRequest,
 };
