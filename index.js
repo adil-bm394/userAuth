@@ -4,6 +4,8 @@ const colors = require("colors");
 const bodyParser = require("body-parser");
 const User = require("./models/UserModel");
 const db = require("./models/index");
+const sequelize = require("./config/database");
+const serverConfig = require("./config/server-config");
 
 
 dotenv.config();
@@ -17,8 +19,6 @@ app.use(bodyParser.json());
 app.use("/api/v1/auth", require("./routes/authRoutes"));
 
 
-const sequelize = require("./config/database");
-
 sequelize
   .sync({ force: false })
   .then(() => {
@@ -28,10 +28,10 @@ sequelize
     console.error(`unable to sync database`, err);
   });
 
-// Routes
+// Routes for testing 
 app.get("/", async (req, res) => {
   try {
-    res.send("Hello");
+    res.send("Hello Word");
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -39,7 +39,7 @@ app.get("/", async (req, res) => {
 
 
 
-const PORT = process.env.PORT || 3000;
+const PORT = serverConfig.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on Port ${PORT}`.bgGreen.white);
 });
