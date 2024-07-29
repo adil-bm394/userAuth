@@ -4,24 +4,24 @@ const userModel = require("../models/UserModel");
 const crypto = require("crypto");
 const sendOtpEmail = require("../services/emailService");
 const OtpModel = require("../models/OtpModel");
+const statusCodes = require("../Utils/statusCodes");
+const messages = require("../Utils/messages");
 
-const otps = new Map(); 
-
-// Generate OTP and send email to User
+//Send-OTP controller
 const sendOtpController = async (req, res) => {
   const { email } = req.body;
 
   const otp = crypto.randomInt(100000, 999999).toString();
 
   try {
-    // Store OTP in the OTP table
     await OtpModel.create({ email, otp });
-
     await sendOtpEmail(email, otp);
-    res.status(200).json({ message: "OTP sent to email" });
+    res.status(statusCodes.OK).json({ message: messages.OTP_SENT });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(statusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
 };
 
@@ -36,20 +36,24 @@ const registerController = async (req, res) => {
     });
 
     if (!otpRecord || otpRecord.otp !== otp) {
-      return res.status(400).json({ message: "Invalid OTP" });
+      return res
+        .status(statusCodes.BAD_REQUEST)
+        .json({ message: messages.OTP_INVALID });
     }
-    
+
     const otpAgeMinutes =
       (new Date() - new Date(otpRecord.createdAt)) / (1000 * 60);
     if (otpAgeMinutes > 5) {
-      return res.status(400).json({ message: "OTP expired" });
+      return res
+        .status(statusCodes.BAD_REQUEST)
+        .json({ message: messages.OTP_EXPIRED });
     }
 
     const existingUser = await userModel.findOne({ where: { email } });
     if (existingUser) {
       return res
-        .status(200)
-        .json({ success: false, message: "User already exists" });
+        .status(statusCodes.OK)
+        .json({ success: false, message: messages.USER_EXISTS });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -63,15 +67,18 @@ const registerController = async (req, res) => {
 
     await OtpModel.destroy({ where: { email } });
 
-    res.status(201).json(newUser);
+    res
+      .status(statusCodes.CREATED)
+      .json({ message: messages.REGISTER_SUCCESS, user: newUser });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(statusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
 };
 
-
-//LoginController
+//Login Controller
 const loginController = async (req, res) => {
   const { email, password } = req.body;
 
@@ -83,19 +90,25 @@ const loginController = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(statusCodes.NOT_FOUND)
+        .json({ message: messages.USER_NOT_FOUND });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res
+        .status(statusCodes.UNAUTHORIZED)
+        .json({ message: messages.INVALID_CREDENTIALS });
     }
 
-    res.status(200).json({ message: "Login successful", user });
+    res.status(statusCodes.OK).json({ message: messages.LOGIN_SUCCESS, user });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: error.message });
+    res
+      .status(statusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
 };
 
@@ -104,26 +117,3 @@ module.exports = {
   registerController,
   loginController,
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

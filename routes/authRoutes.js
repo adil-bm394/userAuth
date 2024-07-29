@@ -1,16 +1,25 @@
-const express=require('express');
-const { registerController, loginController, sendOtpController } = require('../controllers/authController');
+const express = require("express");
+const {
+  registerController,
+  loginController,
+  sendOtpController,
+} = require("../controllers/authController");
+
+const {
+  validateOtpRequest,
+  validateRegisterRequest,
+  validateLoginRequest,
+} = require("../Utils/ValidationSchema");
+const router = express.Router();
 
 
-const router= express.Router();
+// Send OTP to user
+router.post("/send-otp", validateOtpRequest, sendOtpController);
 
-//Send OTP to user 
-router.post('/send-otp',sendOtpController)
+// Register
+router.post("/register", validateRegisterRequest, registerController);
 
-//Register 
-router.post('/register',registerController);
+// Login
+router.get("/login", validateLoginRequest,loginController);
 
-//Login 
-router.get('/login',loginController);
-
-module.exports=router;
+module.exports = router;

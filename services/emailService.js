@@ -1,7 +1,8 @@
 const nodemailer = require("nodemailer");
+const getOtpEmailTemplate = require("./EmailTemplate");
 require("dotenv").config();
 
-console.log("email=>", process.env.mail, "check password=>", process.env.pass);
+//console.log("email=>", process.env.mail, "check password=>", process.env.pass);
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -12,10 +13,10 @@ const transporter = nodemailer.createTransport({
 
 const sendOtpEmail = (email, otp) => {
   const mailOptions = {
-    from: "adil@binmile.com",
+    from: process.env.mail,
     to: email,
     subject: "Your OTP Code",
-    text: `Your OTP code is ${otp}`,
+    html: getOtpEmailTemplate(email, otp),
   };
 
   return transporter.sendMail(mailOptions);
