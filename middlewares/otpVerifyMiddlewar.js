@@ -22,7 +22,7 @@ const verifyOtpToken = (req, res, next) => {
     }
 
     console.log("decoded=>", decoded);
-    req.email = decoded.email; // Attach the email to the request object
+    req.email = decoded.email; 
     next();
   });
 };

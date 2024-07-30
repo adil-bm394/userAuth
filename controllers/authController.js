@@ -63,7 +63,9 @@ const verifyOtpController = async (req, res) => {
       expiresIn: "10m",
     });
 
-    res.status(statusCodes.OK).json({ message: messages.OTP_VERIFIED, otpToken });
+    res
+      .status(statusCodes.OK)
+      .json({ message: messages.OTP_VERIFIED, otpToken });
   } catch (error) {
     console.log(error);
     res
@@ -75,7 +77,13 @@ const verifyOtpController = async (req, res) => {
 //RegisterController
 const registerController = async (req, res) => {
   const { username, password } = req.body;
-  const email = req.email; // Get the email from the middleware
+  const email = req.email;
+  const existingUser = await userModel.findOne({ where: { email } });
+  if (existingUser) {
+    return res
+      .status(statusCodes.OK)
+      .json({ success: false, message: messages.USER_EXISTS });
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -124,10 +132,12 @@ const loginController = async (req, res) => {
         .status(statusCodes.UNAUTHORIZED)
         .json({ message: messages.INVALID_CREDENTIALS });
     }
-       const token = jwt.sign({ id: user._id }, serverConfig.JWT_SECRET, {
-         expiresIn: "1d",
-       });
-    res.status(statusCodes.OK).json({ message: messages.LOGIN_SUCCESS, user ,token});
+    const token = jwt.sign({ id: user._id }, serverConfig.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+    res
+      .status(statusCodes.OK)
+      .json({ message: messages.LOGIN_SUCCESS, user, token });
   } catch (error) {
     console.log(error);
     res
